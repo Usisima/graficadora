@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathGrapher</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: #1e1e1e;
+  overflow: hidden;
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+.layout {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ── EDITOR ── */
+.editor-pane {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  background: #1e1e1e;
+  position: relative;
+}
+
+.line-numbers {
+  width: 50px;
+  padding: 14px 10px 14px 0;
+  text-align: right;
+  font-size: 13px;
+  line-height: 22px;
+  color: #4a4a4a;
+  user-select: none;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #1e1e1e;
+  border-right: 1px solid #2a2a2a;
+}
+
+.code-area {
+  flex: 1;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 22px;
+  color: #d4d4d4;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  caret-color: #aeafad;
+  font-family: 'Consolas', 'Courier New', monospace;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+.code-area::selection { background: rgba(38,79,120,.85); }
+.code-area::-webkit-scrollbar { width: 6px; }
+.code-area::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+.run-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: #0d7a0d;
+  color: #a8ffb0;
+  font-size: 13px;
+  font-family: 'Consolas', monospace;
+  border: 1px solid #1a991a;
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s, transform .1s;
+  z-index: 10;
+}
+.run-btn:hover { background: #0f960f; }
+.run-btn:active { transform: scale(.96); }
+.run-btn kbd {
+  font-size: 10px;
+  opacity: .55;
+  background: rgba(0,0,0,.35);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── DIVIDER ── */
+.divider {
+  width: 4px;
+  background: #2a2a2a;
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.divider:hover, .divider.active { background: #007acc; }
+
+/* ── GRAPH PANE ── */
+.graph-pane {
+  width: 50%;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  background: #0a0a18;
+  flex-shrink: 0;
+}
+
+.graph-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  background: #111122;
+  border-bottom: 1px solid #1e1e35;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.graph-label {
+  font-size: 11px;
+  color: #555588;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.graph-controls { display: flex; gap: 5px; align-items: center; }
+
+.ctrl-btn {
+  padding: 3px 9px;
+  font-size: 11px;
+  background: rgba(255,255,255,.05);
+  color: #7a7aaa;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Consolas', monospace;
+  transition: all .15s;
+  user-select: none;
+}
+.ctrl-btn:hover { background: rgba(255,255,255,.12); color: #ddd; }
+.ctrl-btn:active { transform: scale(.95); }
+
+.coord {
+  font-size: 11px;
+  color: #444466;
+  font-family: 'Consolas', monospace;
+  min-width: 130px;
+  text-align: right;
+}
+
+canvas {
+  display: block;
+  flex: 1;
+  width: 100%;
+  cursor: crosshair;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #0d0d20;
+  border-top: 1px solid #1a1a30;
+  min-height: 28px;
+  flex-shrink: 0;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #9090bb;
+  font-family: 'Consolas', monospace;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.legend-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 22px;
+  padding: 0 14px;
+  background: #007acc;
+  flex-shrink: 0;
+}
+.status-text {
+  font-size: 11px;
+  color: rgba(255,255,255,.85);
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- EDITOR -->
+  <div class="editor-pane" id="editorPane">
+    <div class="line-numbers" id="lineNums">1</div>
+    <textarea class="code-area" id="codeArea" spellcheck="false">// Usa plot("expresión") para graficar
+// Ctrl+Enter para ejecutar
+
+plot("Math.sin(x)")
+plot("Math.cos(x)")
+
+// Más ejemplos:
+// plot("x * x")
+// plot("Math.tan(x)")
+// plot("Math.exp(-x*x) * 3")
+// plot("Math.log(Math.abs(x) + 1)")
+// plot("Math.sin(x) * x")
+// plot("1 / (1 + Math.exp(-x))")
+// plot("Math.pow(x,3) - 3*x")
+// plot("Math.sin(3*x) + Math.cos(2*x)")</textarea>
+    <div class="run-btn" id="runBtn">▶ Run <kbd>Ctrl+↵</kbd></div>
+  </div>
+
+  <!-- DIVIDER -->
+  <div class="divider" id="divider"></div>
+
+  <!-- GRAPH -->
+  <div class="graph-pane" id="graphPane">
+    <div class="graph-header">
+      <span class="graph-label">output — graph</span>
+      <div class="graph-controls">
+        <button class="ctrl-btn" id="zoomIn">＋</button>
+        <button class="ctrl-btn" id="zoomOut">－</button>
+        <button class="ctrl-btn" id="resetView">⟳</button>
+        <button class="ctrl-btn" id="clearBtn">✕</button>
+        <span class="coord" id="coord">x: —, y: —</span>
+      </div>
+    </div>
+    <canvas id="graph"></canvas>
+    <div class="legend" id="legend"></div>
+    <div class="statusbar">
+      <span class="status-text" id="statusMsg">Listo — presiona Run o Ctrl+Enter</span>
+      <span class="status-text" id="cursorPos">Ln 1, Col 1</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const codeArea  = document.getElementById('codeArea');
+const lineNums  = document.getElementById('lineNums');
+const canvas    = document.getElementById('graph');
+const legendEl  = document.getElementById('legend');
+const statusMsg = document.getElementById('statusMsg');
+const cursorPos = document.getElementById('cursorPos');
+const coordEl   = document.getElementById('coord');
+const ctx       = canvas.getContext('2d');
+
+const COLORS = [
+  '#61dafb','#ff6b6b','#4ec9b0','#dcdcaa',
+  '#c586c0','#f9c74f','#a8dadc','#ff9f1c',
+  '#90e0ef','#ff85a1','#2dc653','#e88c2a'
+];
+
+let scale = 60, panX = 0, panY = 0;
+let lastPlots = [];
+let isDragging = false, lastMX = 0, lastMY = 0;
+
+function resizeCanvas() {
+  const pane    = document.getElementById('graphPane');
+  const headerH = pane.querySelector('.graph-header').offsetHeight;
+  const legH    = legendEl.offsetHeight;
+  const statH   = pane.querySelector('.statusbar').offsetHeight;
+  canvas.width  = pane.clientWidth;
+  canvas.height = pane.clientHeight - headerH - legH - statH;
+  drawGraph(lastPlots);
+}
+
+function drawGraph(plots) {
+  lastPlots = plots;
+  const W = canvas.width, H = canvas.height;
+  if (!W || !H) return;
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0a0a18';
+  ctx.fillRect(0, 0, W, H);
+
+  const cx = W / 2 + panX, cy = H / 2 + panY;
+  const s = scale;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let x = ((cx%s)+s)%s; x<=W; x+=s) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = ((cy%s)+s)%s; y<=H; y+=s) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  const b = s * 5;
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  for (let x = ((cx%b)+b)%b; x<=W; x+=b) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = ((cy%b)+b)%b; y<=H; y+=b) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.beginPath(); ctx.moveTo(W-2,cy); ctx.lineTo(W-10,cy-5); ctx.lineTo(W-10,cy+5); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx,2); ctx.lineTo(cx-5,10); ctx.lineTo(cx+5,10); ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = '11px Consolas, monospace';
+  ctx.textAlign = 'center';
+  for (let i = Math.floor(-cx/s)-1; i<=Math.ceil((W-cx)/s)+1; i++) {
+    if (i===0) continue;
+    const px = cx+i*s;
+    if (px<4||px>W-4) continue;
+    ctx.fillText(i, px, cy+14);
+    ctx.fillRect(px-.5, cy-3, 1, 6);
+  }
+  ctx.textAlign = 'right';
+  for (let j = Math.floor(-cy/s)-1; j<=Math.ceil((H-cy)/s)+1; j++) {
+    if (j===0) continue;
+    const py = cy+j*s;
+    if (py<4||py>H-4) continue;
+    ctx.fillText(-j, cx-6, py+3.5);
+    ctx.fillRect(cx-3, py-.5, 6, 1);
+  }
+
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.font = 'italic 13px Georgia, serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('x', W-14, cy-8);
+  ctx.fillText('y', cx+8, 14);
+
+  plots.forEach((expr, idx) => {
+    const color = COLORS[idx % COLORS.length];
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 7;
+    ctx.shadowColor = color;
+    ctx.beginPath();
+    let penDown = false, prevY = null;
+    for (let px = 0; px<=W; px+=0.8) {
+      const mx = (px-cx)/s;
+      let my;
+      try { my = eval(expr.replace(/\bx\b/g,'('+mx+')')); } catch(e) { penDown=false; continue; }
+      if (!isFinite(my)||isNaN(my)) { penDown=false; prevY=null; continue; }
+      const py = cy-my*s;
+      const jump = prevY!==null && Math.abs(py-prevY)>H*.85;
+      if (!penDown||jump) { ctx.moveTo(px,py); penDown=true; }
+      else ctx.lineTo(px,py);
+      prevY = py;
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  });
+
+  legendEl.innerHTML = '';
+  plots.forEach((expr, idx) => {
+    const color = COLORS[idx % COLORS.length];
+    const short = expr.length>36 ? expr.slice(0,34)+'…' : expr;
+    const el = document.createElement('div');
+    el.className = 'legend-item';
+    el.innerHTML = `<div class="legend-dot" style="background:${color};box-shadow:0 0 4px ${color}88"></div><span>f${idx+1} = ${short}</span>`;
+    legendEl.appendChild(el);
+  });
+}
+
+function runCode() {
+  const plots = [];
+  try {
+    const fn = new Function('plot','Math', codeArea.value);
+    fn(expr => { if (typeof expr==='string') plots.push(expr.trim()); }, Math);
+    statusMsg.textContent = plots.length ? `✓  ${plots.length} función(es) graficada(s)` : '⚠  Ninguna función — usa plot("expr")';
+    statusMsg.style.color = plots.length ? 'rgba(255,255,255,.85)' : '#ffcc55';
+  } catch(e) {
+    statusMsg.textContent = `✗  ${e.message}`;
+    statusMsg.style.color = '#ff8888';
+  }
+  drawGraph(plots);
+}
+
+function updateLines() {
+  const n = codeArea.value.split('\n').length;
+  lineNums.innerHTML = Array.from({length:n},(_,i)=>i+1).join('<br>');
+  lineNums.scrollTop = codeArea.scrollTop;
+}
+codeArea.addEventListener('scroll', () => { lineNums.scrollTop = codeArea.scrollTop; });
+codeArea.addEventListener('input', updateLines);
+codeArea.addEventListener('keydown', e => {
+  if ((e.ctrlKey||e.metaKey) && e.key==='Enter') { e.preventDefault(); runCode(); return; }
+  if (e.key==='Tab') {
+    e.preventDefault();
+    const s = codeArea.selectionStart;
+    codeArea.value = codeArea.value.slice(0,s)+'  '+codeArea.value.slice(codeArea.selectionEnd);
+    codeArea.selectionStart = codeArea.selectionEnd = s+2;
+    updateLines();
+  }
+});
+codeArea.addEventListener('keyup', updateCursor);
+codeArea.addEventListener('click', updateCursor);
+function updateCursor() {
+  const lines = codeArea.value.slice(0,codeArea.selectionStart).split('\n');
+  cursorPos.textContent = `Ln ${lines.length}, Col ${lines[lines.length-1].length+1}`;
+}
+
+document.getElementById('runBtn').addEventListener('click', runCode);
+document.getElementById('zoomIn').addEventListener('click', () => { scale=Math.min(scale*1.25,400); drawGraph(lastPlots); });
+document.getElementById('zoomOut').addEventListener('click', () => { scale=Math.max(scale/1.25,8); drawGraph(lastPlots); });
+document.getElementById('resetView').addEventListener('click', () => { scale=60; panX=0; panY=0; drawGraph(lastPlots); });
+document.getElementById('clearBtn').addEventListener('click', () => { drawGraph([]); statusMsg.textContent='○  Canvas limpiado'; statusMsg.style.color='rgba(255,255,255,.5)'; });
+
+canvas.addEventListener('mousedown', e => { isDragging=true; lastMX=e.offsetX; lastMY=e.offsetY; canvas.style.cursor='grabbing'; });
+canvas.addEventListener('mousemove', e => {
+  const mx=((e.offsetX-canvas.width/2-panX)/scale).toFixed(3);
+  const my=((canvas.height/2+panY-e.offsetY)/scale).toFixed(3);
+  coordEl.textContent = `x: ${mx},  y: ${my}`;
+  if (isDragging) { panX+=e.offsetX-lastMX; panY+=e.offsetY-lastMY; lastMX=e.offsetX; lastMY=e.offsetY; drawGraph(lastPlots); }
+});
+canvas.addEventListener('mouseup', () => { isDragging=false; canvas.style.cursor='crosshair'; });
+canvas.addEventListener('mouseleave', () => { isDragging=false; canvas.style.cursor='crosshair'; coordEl.textContent='x: —, y: —'; });
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  scale = Math.min(400, Math.max(8, scale*(e.deltaY<0?1.1:0.9)));
+  drawGraph(lastPlots);
+}, { passive: false });
+
+const divider = document.getElementById('divider');
+const graphPane = document.getElementById('graphPane');
+let resizing=false, resX=0, resW=0;
+divider.addEventListener('mousedown', e => { resizing=true; resX=e.clientX; resW=graphPane.offsetWidth; divider.classList.add('active'); document.body.style.cursor='col-resize'; document.body.style.userSelect='none'; });
+document.addEventListener('mousemove', e => { if(!resizing)return; graphPane.style.width=Math.max(180,Math.min(window.innerWidth*.8,resW+(resX-e.clientX)))+'px'; resizeCanvas(); });
+document.addEventListener('mouseup', () => { if(!resizing)return; resizing=false; divider.classList.remove('active'); document.body.style.cursor=''; document.body.style.userSelect=''; });
+
+updateLines();
+window.addEventListener('resize', resizeCanvas);
+setTimeout(() => { resizeCanvas(); runCode(); }, 60);
+</script>
+</body>
+</html>
