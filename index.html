@@ -2,115 +2,184 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MathGrapher</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body {
-  width: 100%; height: 100%;
-  background: #1e1e1e;
-  overflow: hidden;
-  font-family: 'Consolas', 'Courier New', monospace;
+<!-- MathJax for LaTeX rendering -->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$']] },
+  svg: { fontCache: 'global' },
+  startup: { ready() { MathJax.startup.defaultReady(); } }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+/* ── RESET ── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --bg:       #1e1e1e;
+  --bg2:      #252526;
+  --border:   #2d2d2d;
+  --text:     #d4d4d4;
+  --dim:      #4a4a4a;
+  --accent:   #007acc;
+  --green:    #0d7a0d;
+  --green-fg: #a8ffb0;
+  --graph-bg: #0a0a18;
+  --hdr:      #111122;
 }
 
+html, body {
+  width:100%; height:100%;
+  background: var(--bg);
+  font-family: 'Consolas','Courier New',monospace;
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* ── LAYOUT: side-by-side on desktop, stacked on mobile ── */
 .layout {
   display: flex;
   width: 100vw;
   height: 100vh;
 }
 
-/* ── EDITOR ── */
+/* ── EDITOR PANE ── */
 .editor-pane {
   flex: 1;
   display: flex;
+  flex-direction: column;
   min-width: 0;
-  background: #1e1e1e;
+  min-height: 0;
+  background: var(--bg);
   position: relative;
 }
 
+.editor-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
 .line-numbers {
-  width: 50px;
-  padding: 14px 10px 14px 0;
+  width: 46px;
+  padding: 14px 8px 14px 0;
   text-align: right;
   font-size: 13px;
   line-height: 22px;
-  color: #4a4a4a;
+  color: var(--dim);
   user-select: none;
   flex-shrink: 0;
   overflow: hidden;
-  background: #1e1e1e;
-  border-right: 1px solid #2a2a2a;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
 }
 
 .code-area {
   flex: 1;
-  padding: 14px 16px;
+  padding: 14px 14px;
   font-size: 13px;
   line-height: 22px;
-  color: #d4d4d4;
+  color: var(--text);
   background: transparent;
   border: none;
   outline: none;
   resize: none;
   caret-color: #aeafad;
-  font-family: 'Consolas', 'Courier New', monospace;
+  font-family: 'Consolas','Courier New',monospace;
   tab-size: 2;
   white-space: pre;
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: #333 transparent;
+  /* bigger touch target for mobile */
+  -webkit-user-select: text;
+  user-select: text;
 }
 .code-area::selection { background: rgba(38,79,120,.85); }
-.code-area::-webkit-scrollbar { width: 6px; }
-.code-area::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+.code-area::-webkit-scrollbar { width:6px; }
+.code-area::-webkit-scrollbar-thumb { background:#333; border-radius:3px; }
 
-.run-btn {
-  position: absolute;
-  bottom: 16px;
-  right: 16px;
+/* ── TOOLBAR under editor ── */
+.editor-toolbar {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 16px;
-  background: #0d7a0d;
-  color: #a8ffb0;
-  font-size: 13px;
-  font-family: 'Consolas', monospace;
-  border: 1px solid #1a991a;
-  border-radius: 5px;
-  cursor: pointer;
-  user-select: none;
-  transition: background .15s, transform .1s;
-  z-index: 10;
-}
-.run-btn:hover { background: #0f960f; }
-.run-btn:active { transform: scale(.96); }
-.run-btn kbd {
-  font-size: 10px;
-  opacity: .55;
-  background: rgba(0,0,0,.35);
-  padding: 1px 5px;
-  border-radius: 3px;
+  padding: 7px 10px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
-/* ── DIVIDER ── */
+.run-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: var(--green);
+  color: var(--green-fg);
+  font-size: 14px;
+  font-family: 'Consolas',monospace;
+  border: 1px solid #1a991a;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  transition: background .15s, transform .1s;
+  flex-shrink: 0;
+}
+.run-btn:hover { background: #0f960f; }
+.run-btn:active { transform: scale(.95); }
+.run-btn kbd {
+  font-size: 10px; opacity:.5;
+  background: rgba(0,0,0,.35);
+  padding: 1px 5px; border-radius:3px;
+}
+
+/* LaTeX formula chips */
+.latex-strip {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.latex-chip {
+  padding: 5px 10px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 5px;
+  cursor: pointer;
+  color: #ccc;
+  font-size: 12px;
+  touch-action: manipulation;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.latex-chip:hover { background: rgba(255,255,255,.14); }
+.latex-chip:active { transform: scale(.93); }
+
+/* ── DIVIDER (desktop only) ── */
 .divider {
   width: 4px;
-  background: #2a2a2a;
+  background: var(--border);
   cursor: col-resize;
   flex-shrink: 0;
+  touch-action: none;
   transition: background .15s;
 }
-.divider:hover, .divider.active { background: #007acc; }
+.divider:hover, .divider.active { background: var(--accent); }
 
 /* ── GRAPH PANE ── */
 .graph-pane {
   width: 50%;
-  min-width: 200px;
+  min-width: 180px;
   display: flex;
   flex-direction: column;
-  background: #0a0a18;
+  background: var(--graph-bg);
   flex-shrink: 0;
 }
 
@@ -119,10 +188,11 @@ html, body {
   align-items: center;
   justify-content: space-between;
   padding: 7px 12px;
-  background: #111122;
+  background: var(--hdr);
   border-bottom: 1px solid #1e1e35;
   flex-shrink: 0;
   gap: 8px;
+  flex-wrap: wrap;
 }
 .graph-label {
   font-size: 11px;
@@ -130,38 +200,42 @@ html, body {
   letter-spacing: .08em;
   text-transform: uppercase;
 }
-.graph-controls { display: flex; gap: 5px; align-items: center; }
+.graph-controls { display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
 
 .ctrl-btn {
-  padding: 3px 9px;
-  font-size: 11px;
+  padding: 6px 11px;
+  font-size: 13px;
   background: rgba(255,255,255,.05);
   color: #7a7aaa;
   border: 1px solid rgba(255,255,255,.1);
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
-  font-family: 'Consolas', monospace;
+  touch-action: manipulation;
   transition: all .15s;
   user-select: none;
+  min-width: 36px;
+  text-align: center;
 }
-.ctrl-btn:hover { background: rgba(255,255,255,.12); color: #ddd; }
-.ctrl-btn:active { transform: scale(.95); }
+.ctrl-btn:hover { background: rgba(255,255,255,.13); color:#ddd; }
+.ctrl-btn:active { transform:scale(.93); }
 
 .coord {
   font-size: 11px;
   color: #444466;
-  font-family: 'Consolas', monospace;
-  min-width: 130px;
+  font-family: 'Consolas',monospace;
+  min-width: 120px;
   text-align: right;
 }
 
-canvas {
+canvas#graph {
   display: block;
   flex: 1;
   width: 100%;
+  touch-action: none;
   cursor: crosshair;
 }
 
+/* ── LEGEND + LATEX DISPLAY ── */
 .legend {
   display: flex;
   flex-wrap: wrap;
@@ -169,40 +243,57 @@ canvas {
   padding: 6px 12px;
   background: #0d0d20;
   border-top: 1px solid #1a1a30;
-  min-height: 28px;
+  min-height: 30px;
   flex-shrink: 0;
+  align-items: center;
 }
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 12px;
   color: #9090bb;
-  font-family: 'Consolas', monospace;
-  max-width: 200px;
+  max-width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .legend-dot {
   width: 9px; height: 9px;
   border-radius: 50%;
   flex-shrink: 0;
 }
+/* MathJax rendered formula inside legend */
+.legend-item .mjx-container { color: #ccc !important; }
 
+/* ── STATUS BAR ── */
 .statusbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 22px;
-  padding: 0 14px;
-  background: #007acc;
+  padding: 0 12px;
+  background: var(--accent);
   flex-shrink: 0;
 }
 .status-text {
   font-size: 11px;
   color: rgba(255,255,255,.85);
-  font-family: -apple-system, 'Segoe UI', sans-serif;
+  font-family: -apple-system,'Segoe UI',sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── MOBILE: stacked layout ── */
+@media (max-width: 640px) {
+  .layout { flex-direction: column; }
+  .divider { width:100%; height:4px; cursor:row-resize; }
+  .editor-pane { height: 45%; flex: none; }
+  .graph-pane  { width: 100%; flex: 1; }
+  .code-area   { font-size: 14px; line-height: 24px; }
+  .line-numbers{ font-size: 14px; line-height: 24px; }
+  .coord { display: none; }
+  .run-btn { font-size: 15px; padding: 9px 20px; }
+  .latex-chip  { font-size: 13px; padding: 6px 12px; }
 }
 </style>
 </head>
@@ -210,16 +301,17 @@ canvas {
 
 <div class="layout">
 
-  <!-- EDITOR -->
+  <!-- ══ EDITOR ══ -->
   <div class="editor-pane" id="editorPane">
-    <div class="line-numbers" id="lineNums">1</div>
-    <textarea class="code-area" id="codeArea" spellcheck="false">// Usa plot("expresión") para graficar
-// Ctrl+Enter para ejecutar
+    <div class="editor-body">
+      <div class="line-numbers" id="lineNums">1</div>
+      <textarea class="code-area" id="codeArea" spellcheck="false" autocorrect="off" autocapitalize="off">// Usa plot("expresión") para graficar
+// Ctrl+Enter (o botón Run) para ejecutar
 
 plot("Math.sin(x)")
 plot("Math.cos(x)")
 
-// Más ejemplos:
+// Más funciones:
 // plot("x * x")
 // plot("Math.tan(x)")
 // plot("Math.exp(-x*x) * 3")
@@ -228,13 +320,20 @@ plot("Math.cos(x)")
 // plot("1 / (1 + Math.exp(-x))")
 // plot("Math.pow(x,3) - 3*x")
 // plot("Math.sin(3*x) + Math.cos(2*x)")</textarea>
-    <div class="run-btn" id="runBtn">▶ Run <kbd>Ctrl+↵</kbd></div>
+    </div>
+
+    <div class="editor-toolbar">
+      <div class="run-btn" id="runBtn">▶ Run <kbd>Ctrl+↵</kbd></div>
+      <div class="latex-strip" id="latexStrip">
+        <!-- chips inserted by JS -->
+      </div>
+    </div>
   </div>
 
-  <!-- DIVIDER -->
+  <!-- ══ DIVIDER ══ -->
   <div class="divider" id="divider"></div>
 
-  <!-- GRAPH -->
+  <!-- ══ GRAPH ══ -->
   <div class="graph-pane" id="graphPane">
     <div class="graph-header">
       <span class="graph-label">output — graph</span>
@@ -257,6 +356,9 @@ plot("Math.cos(x)")
 </div>
 
 <script>
+// ════════════════════════════════
+//   REFS
+// ════════════════════════════════
 const codeArea  = document.getElementById('codeArea');
 const lineNums  = document.getElementById('lineNums');
 const canvas    = document.getElementById('graph');
@@ -272,179 +374,394 @@ const COLORS = [
   '#90e0ef','#ff85a1','#2dc653','#e88c2a'
 ];
 
-let scale = 60, panX = 0, panY = 0;
-let lastPlots = [];
-let isDragging = false, lastMX = 0, lastMY = 0;
+let scale=60, panX=0, panY=0, lastPlots=[];
 
+// ════════════════════════════════
+//   LATEX CHIPS
+//   Each chip: { label (LaTeX), code (JS expr to insert) }
+// ════════════════════════════════
+const CHIPS = [
+  { latex:'\\sin(x)',          code:'Math.sin(x)' },
+  { latex:'\\cos(x)',          code:'Math.cos(x)' },
+  { latex:'\\tan(x)',          code:'Math.tan(x)' },
+  { latex:'x^2',               code:'x*x' },
+  { latex:'x^3',               code:'x*x*x' },
+  { latex:'\\sqrt{|x|}',       code:'Math.sqrt(Math.abs(x))' },
+  { latex:'e^{-x^2}',         code:'Math.exp(-x*x)' },
+  { latex:'\\ln|x|',           code:'Math.log(Math.abs(x)+1)' },
+  { latex:'\\frac{1}{1+e^{-x}}', code:'1/(1+Math.exp(-x))' },
+  { latex:'x\\sin(x)',         code:'x*Math.sin(x)' },
+  { latex:'x^3-3x',           code:'Math.pow(x,3)-3*x' },
+];
+
+function buildChips() {
+  const strip = document.getElementById('latexStrip');
+  CHIPS.forEach(chip => {
+    const btn = document.createElement('div');
+    btn.className = 'latex-chip';
+    btn.setAttribute('data-code', chip.code);
+    // render LaTeX via MathJax span
+    btn.innerHTML = `\\(${chip.latex}\\)`;
+    btn.addEventListener('click', () => insertPlot(chip.code));
+    btn.addEventListener('touchend', e => { e.preventDefault(); insertPlot(chip.code); });
+    strip.appendChild(btn);
+  });
+  // Trigger MathJax typeset on chips
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([strip]);
+  }
+}
+
+function insertPlot(code) {
+  const line = `plot("${code}")`;
+  const s = codeArea.selectionStart;
+  const val = codeArea.value;
+  // insert at cursor or append
+  const before = val.slice(0, s);
+  const after  = val.slice(s);
+  const newline = (before.length && !before.endsWith('\n')) ? '\n' : '';
+  codeArea.value = before + newline + line + '\n' + after;
+  updateLines();
+  runCode();
+}
+
+// ════════════════════════════════
+//   CANVAS RESIZE
+// ════════════════════════════════
 function resizeCanvas() {
-  const pane    = document.getElementById('graphPane');
-  const headerH = pane.querySelector('.graph-header').offsetHeight;
-  const legH    = legendEl.offsetHeight;
-  const statH   = pane.querySelector('.statusbar').offsetHeight;
+  const pane   = document.getElementById('graphPane');
+  const hdrH   = pane.querySelector('.graph-header').offsetHeight;
+  const legH   = legendEl.offsetHeight;
+  const statH  = pane.querySelector('.statusbar').offsetHeight;
   canvas.width  = pane.clientWidth;
-  canvas.height = pane.clientHeight - headerH - legH - statH;
+  canvas.height = Math.max(10, pane.clientHeight - hdrH - legH - statH);
   drawGraph(lastPlots);
 }
 
+// ════════════════════════════════
+//   DRAW
+// ════════════════════════════════
 function drawGraph(plots) {
   lastPlots = plots;
   const W = canvas.width, H = canvas.height;
   if (!W || !H) return;
 
-  ctx.clearRect(0, 0, W, H);
+  ctx.clearRect(0,0,W,H);
   ctx.fillStyle = '#0a0a18';
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(0,0,W,H);
 
-  const cx = W / 2 + panX, cy = H / 2 + panY;
-  const s = scale;
+  const cx = W/2 + panX, cy = H/2 + panY, s = scale;
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-  ctx.lineWidth = 1;
-  for (let x = ((cx%s)+s)%s; x<=W; x+=s) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for (let y = ((cy%s)+s)%s; y<=H; y+=s) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  // minor grid
+  ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1;
+  for(let x=((cx%s)+s)%s;x<=W;x+=s){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=((cy%s)+s)%s;y<=H;y+=s){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
 
-  const b = s * 5;
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  for (let x = ((cx%b)+b)%b; x<=W; x+=b) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for (let y = ((cy%b)+b)%b; y<=H; y+=b) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  // major grid
+  const b=s*5; ctx.strokeStyle='rgba(255,255,255,0.08)';
+  for(let x=((cx%b)+b)%b;x<=W;x+=b){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=((cy%b)+b)%b;y<=H;y+=b){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+  // axes
+  ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(W,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx,H);ctx.stroke();
 
-  ctx.fillStyle = 'rgba(255,255,255,0.4)';
-  ctx.beginPath(); ctx.moveTo(W-2,cy); ctx.lineTo(W-10,cy-5); ctx.lineTo(W-10,cy+5); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(cx,2); ctx.lineTo(cx-5,10); ctx.lineTo(cx+5,10); ctx.fill();
+  // arrows
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.beginPath();ctx.moveTo(W-2,cy);ctx.lineTo(W-10,cy-5);ctx.lineTo(W-10,cy+5);ctx.fill();
+  ctx.beginPath();ctx.moveTo(cx,2);ctx.lineTo(cx-5,10);ctx.lineTo(cx+5,10);ctx.fill();
 
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  ctx.font = '11px Consolas, monospace';
-  ctx.textAlign = 'center';
-  for (let i = Math.floor(-cx/s)-1; i<=Math.ceil((W-cx)/s)+1; i++) {
-    if (i===0) continue;
-    const px = cx+i*s;
-    if (px<4||px>W-4) continue;
-    ctx.fillText(i, px, cy+14);
-    ctx.fillRect(px-.5, cy-3, 1, 6);
+  // tick labels
+  ctx.fillStyle='rgba(255,255,255,0.3)';
+  ctx.font='11px Consolas,monospace'; ctx.textAlign='center';
+  for(let i=Math.floor(-cx/s)-1;i<=Math.ceil((W-cx)/s)+1;i++){
+    if(i===0) continue;
+    const px=cx+i*s; if(px<4||px>W-4) continue;
+    ctx.fillText(i,px,cy+14); ctx.fillRect(px-.5,cy-3,1,6);
   }
-  ctx.textAlign = 'right';
-  for (let j = Math.floor(-cy/s)-1; j<=Math.ceil((H-cy)/s)+1; j++) {
-    if (j===0) continue;
-    const py = cy+j*s;
-    if (py<4||py>H-4) continue;
-    ctx.fillText(-j, cx-6, py+3.5);
-    ctx.fillRect(cx-3, py-.5, 6, 1);
+  ctx.textAlign='right';
+  for(let j=Math.floor(-cy/s)-1;j<=Math.ceil((H-cy)/s)+1;j++){
+    if(j===0) continue;
+    const py=cy+j*s; if(py<4||py>H-4) continue;
+    ctx.fillText(-j,cx-6,py+3.5); ctx.fillRect(cx-3,py-.5,6,1);
   }
 
-  ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.font = 'italic 13px Georgia, serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('x', W-14, cy-8);
-  ctx.fillText('y', cx+8, 14);
+  // axis labels
+  ctx.fillStyle='rgba(255,255,255,0.45)';
+  ctx.font='italic 13px Georgia,serif'; ctx.textAlign='left';
+  ctx.fillText('x',W-14,cy-8); ctx.fillText('y',cx+8,14);
 
-  plots.forEach((expr, idx) => {
-    const color = COLORS[idx % COLORS.length];
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.shadowBlur = 7;
-    ctx.shadowColor = color;
+  // curves
+  plots.forEach((expr,idx)=>{
+    const color=COLORS[idx%COLORS.length];
+    ctx.strokeStyle=color; ctx.lineWidth=2;
+    ctx.shadowBlur=7; ctx.shadowColor=color;
     ctx.beginPath();
-    let penDown = false, prevY = null;
-    for (let px = 0; px<=W; px+=0.8) {
-      const mx = (px-cx)/s;
+    let penDown=false, prevY=null;
+    for(let px=0;px<=W;px+=0.8){
+      const mx=(px-cx)/s;
       let my;
-      try { my = eval(expr.replace(/\bx\b/g,'('+mx+')')); } catch(e) { penDown=false; continue; }
-      if (!isFinite(my)||isNaN(my)) { penDown=false; prevY=null; continue; }
-      const py = cy-my*s;
-      const jump = prevY!==null && Math.abs(py-prevY)>H*.85;
-      if (!penDown||jump) { ctx.moveTo(px,py); penDown=true; }
+      try{my=eval(expr.replace(/\bx\b/g,'('+mx+')'));}catch(e){penDown=false;continue;}
+      if(!isFinite(my)||isNaN(my)){penDown=false;prevY=null;continue;}
+      const py=cy-my*s;
+      if(!penDown||( prevY!==null&&Math.abs(py-prevY)>H*.85)){ctx.moveTo(px,py);penDown=true;}
       else ctx.lineTo(px,py);
-      prevY = py;
+      prevY=py;
     }
-    ctx.stroke();
-    ctx.shadowBlur = 0;
+    ctx.stroke(); ctx.shadowBlur=0;
   });
 
-  legendEl.innerHTML = '';
-  plots.forEach((expr, idx) => {
-    const color = COLORS[idx % COLORS.length];
-    const short = expr.length>36 ? expr.slice(0,34)+'…' : expr;
-    const el = document.createElement('div');
-    el.className = 'legend-item';
-    el.innerHTML = `<div class="legend-dot" style="background:${color};box-shadow:0 0 4px ${color}88"></div><span>f${idx+1} = ${short}</span>`;
+  // legend with LaTeX
+  legendEl.innerHTML='';
+  plots.forEach((expr,idx)=>{
+    const color=COLORS[idx%COLORS.length];
+    const latex=exprToLatex(expr);
+    const el=document.createElement('div');
+    el.className='legend-item';
+    el.innerHTML=`<div class="legend-dot" style="background:${color};box-shadow:0 0 5px ${color}88"></div><span>\\(f_{${idx+1}}(x)=${latex}\\)</span>`;
     legendEl.appendChild(el);
   });
+  if(plots.length && window.MathJax && MathJax.typesetPromise){
+    MathJax.typesetPromise([legendEl]);
+  }
 }
 
+// ════════════════════════════════
+//   EXPR → LATEX (best-effort)
+// ════════════════════════════════
+function exprToLatex(expr) {
+  return expr
+    .replace(/Math\.sin/g,'\\sin')
+    .replace(/Math\.cos/g,'\\cos')
+    .replace(/Math\.tan/g,'\\tan')
+    .replace(/Math\.sqrt\(([^)]+)\)/g,'\\sqrt{$1}')
+    .replace(/Math\.abs\(([^)]+)\)/g,'|$1|')
+    .replace(/Math\.exp\(([^)]+)\)/g,'e^{$1}')
+    .replace(/Math\.log/g,'\\ln')
+    .replace(/Math\.pow\(([^,]+),([^)]+)\)/g,'($1)^{$2}')
+    .replace(/Math\.PI/g,'\\pi')
+    .replace(/\*\*/g,'^')
+    .replace(/([a-z0-9])\*([a-z0-9])/gi,'$1\\cdot $2')
+    .replace(/\*/g,'')
+    .replace(/\//g,'\\div ')
+    .trim();
+}
+
+// ════════════════════════════════
+//   RUN
+// ════════════════════════════════
 function runCode() {
-  const plots = [];
+  const plots=[];
   try {
-    const fn = new Function('plot','Math', codeArea.value);
-    fn(expr => { if (typeof expr==='string') plots.push(expr.trim()); }, Math);
-    statusMsg.textContent = plots.length ? `✓  ${plots.length} función(es) graficada(s)` : '⚠  Ninguna función — usa plot("expr")';
-    statusMsg.style.color = plots.length ? 'rgba(255,255,255,.85)' : '#ffcc55';
+    const fn=new Function('plot','Math',codeArea.value);
+    fn(expr=>{if(typeof expr==='string')plots.push(expr.trim());},Math);
+    statusMsg.textContent=plots.length
+      ?`✓  ${plots.length} función(es) graficada(s)`
+      :'⚠  Ninguna función — usa plot("expr")';
+    statusMsg.style.color=plots.length?'rgba(255,255,255,.85)':'#ffcc55';
   } catch(e) {
-    statusMsg.textContent = `✗  ${e.message}`;
-    statusMsg.style.color = '#ff8888';
+    statusMsg.textContent=`✗  ${e.message}`;
+    statusMsg.style.color='#ff8888';
   }
   drawGraph(plots);
 }
 
-function updateLines() {
-  const n = codeArea.value.split('\n').length;
-  lineNums.innerHTML = Array.from({length:n},(_,i)=>i+1).join('<br>');
-  lineNums.scrollTop = codeArea.scrollTop;
+// ════════════════════════════════
+//   LINE NUMBERS
+// ════════════════════════════════
+function updateLines(){
+  const n=codeArea.value.split('\n').length;
+  lineNums.innerHTML=Array.from({length:n},(_,i)=>i+1).join('<br>');
+  lineNums.scrollTop=codeArea.scrollTop;
 }
-codeArea.addEventListener('scroll', () => { lineNums.scrollTop = codeArea.scrollTop; });
-codeArea.addEventListener('input', updateLines);
-codeArea.addEventListener('keydown', e => {
-  if ((e.ctrlKey||e.metaKey) && e.key==='Enter') { e.preventDefault(); runCode(); return; }
-  if (e.key==='Tab') {
+codeArea.addEventListener('scroll',()=>{lineNums.scrollTop=codeArea.scrollTop;});
+codeArea.addEventListener('input',updateLines);
+codeArea.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runCode();return;}
+  if(e.key==='Tab'){
     e.preventDefault();
-    const s = codeArea.selectionStart;
-    codeArea.value = codeArea.value.slice(0,s)+'  '+codeArea.value.slice(codeArea.selectionEnd);
-    codeArea.selectionStart = codeArea.selectionEnd = s+2;
+    const s=codeArea.selectionStart;
+    codeArea.value=codeArea.value.slice(0,s)+'  '+codeArea.value.slice(codeArea.selectionEnd);
+    codeArea.selectionStart=codeArea.selectionEnd=s+2;
     updateLines();
   }
 });
-codeArea.addEventListener('keyup', updateCursor);
-codeArea.addEventListener('click', updateCursor);
-function updateCursor() {
-  const lines = codeArea.value.slice(0,codeArea.selectionStart).split('\n');
-  cursorPos.textContent = `Ln ${lines.length}, Col ${lines[lines.length-1].length+1}`;
+function updateCursor(){
+  const lines=codeArea.value.slice(0,codeArea.selectionStart).split('\n');
+  cursorPos.textContent=`Ln ${lines.length}, Col ${lines[lines.length-1].length+1}`;
 }
+codeArea.addEventListener('keyup',updateCursor);
+codeArea.addEventListener('click',updateCursor);
 
-document.getElementById('runBtn').addEventListener('click', runCode);
-document.getElementById('zoomIn').addEventListener('click', () => { scale=Math.min(scale*1.25,400); drawGraph(lastPlots); });
-document.getElementById('zoomOut').addEventListener('click', () => { scale=Math.max(scale/1.25,8); drawGraph(lastPlots); });
-document.getElementById('resetView').addEventListener('click', () => { scale=60; panX=0; panY=0; drawGraph(lastPlots); });
-document.getElementById('clearBtn').addEventListener('click', () => { drawGraph([]); statusMsg.textContent='○  Canvas limpiado'; statusMsg.style.color='rgba(255,255,255,.5)'; });
+// ════════════════════════════════
+//   BUTTONS
+// ════════════════════════════════
+document.getElementById('runBtn').addEventListener('click',runCode);
+document.getElementById('zoomIn').addEventListener('click',()=>{scale=Math.min(scale*1.25,400);drawGraph(lastPlots);});
+document.getElementById('zoomOut').addEventListener('click',()=>{scale=Math.max(scale/1.25,8);drawGraph(lastPlots);});
+document.getElementById('resetView').addEventListener('click',()=>{scale=60;panX=0;panY=0;drawGraph(lastPlots);});
+document.getElementById('clearBtn').addEventListener('click',()=>{drawGraph([]);statusMsg.textContent='○  Canvas limpiado';statusMsg.style.color='rgba(255,255,255,.5)';});
 
-canvas.addEventListener('mousedown', e => { isDragging=true; lastMX=e.offsetX; lastMY=e.offsetY; canvas.style.cursor='grabbing'; });
-canvas.addEventListener('mousemove', e => {
+// ════════════════════════════════
+//   MOUSE INTERACTION (desktop)
+// ════════════════════════════════
+let isDragging=false, lastMX=0, lastMY=0;
+
+canvas.addEventListener('mousedown',e=>{isDragging=true;lastMX=e.offsetX;lastMY=e.offsetY;canvas.style.cursor='grabbing';});
+canvas.addEventListener('mousemove',e=>{
   const mx=((e.offsetX-canvas.width/2-panX)/scale).toFixed(3);
   const my=((canvas.height/2+panY-e.offsetY)/scale).toFixed(3);
-  coordEl.textContent = `x: ${mx},  y: ${my}`;
-  if (isDragging) { panX+=e.offsetX-lastMX; panY+=e.offsetY-lastMY; lastMX=e.offsetX; lastMY=e.offsetY; drawGraph(lastPlots); }
+  coordEl.textContent=`x: ${mx},  y: ${my}`;
+  if(isDragging){panX+=e.offsetX-lastMX;panY+=e.offsetY-lastMY;lastMX=e.offsetX;lastMY=e.offsetY;drawGraph(lastPlots);}
 });
-canvas.addEventListener('mouseup', () => { isDragging=false; canvas.style.cursor='crosshair'; });
-canvas.addEventListener('mouseleave', () => { isDragging=false; canvas.style.cursor='crosshair'; coordEl.textContent='x: —, y: —'; });
-canvas.addEventListener('wheel', e => {
+canvas.addEventListener('mouseup',()=>{isDragging=false;canvas.style.cursor='crosshair';});
+canvas.addEventListener('mouseleave',()=>{isDragging=false;canvas.style.cursor='crosshair';coordEl.textContent='x: —, y: —';});
+canvas.addEventListener('wheel',e=>{
   e.preventDefault();
-  scale = Math.min(400, Math.max(8, scale*(e.deltaY<0?1.1:0.9)));
+  scale=Math.min(400,Math.max(8,scale*(e.deltaY<0?1.1:0.9)));
   drawGraph(lastPlots);
+},{passive:false});
+
+// ════════════════════════════════
+//   TOUCH INTERACTION (mobile)
+//   - 1 finger: pan
+//   - 2 fingers: pinch-to-zoom
+// ════════════════════════════════
+let touches = {};       // active touches by id
+let pinchDist0 = null;  // initial pinch distance
+let pinchScale0 = null; // scale at pinch start
+let touchPanX0 = null, touchPanY0 = null; // pan at pan start
+let touchMid0 = null;  // midpoint at pinch start
+
+function getTouches(e) {
+  return Array.from(e.touches).map(t => {
+    const r = canvas.getBoundingClientRect();
+    return { id: t.identifier, x: t.clientX - r.left, y: t.clientY - r.top };
+  });
+}
+
+function dist(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const ts = getTouches(e);
+  if (ts.length === 1) {
+    // start pan
+    lastMX = ts[0].x; lastMY = ts[0].y;
+    pinchDist0 = null;
+  } else if (ts.length === 2) {
+    // start pinch
+    pinchDist0  = dist(ts[0], ts[1]);
+    pinchScale0 = scale;
+    touchPanX0  = panX; touchPanY0 = panY;
+    touchMid0   = { x: (ts[0].x + ts[1].x) / 2, y: (ts[0].y + ts[1].y) / 2 };
+  }
 }, { passive: false });
 
-const divider = document.getElementById('divider');
-const graphPane = document.getElementById('graphPane');
-let resizing=false, resX=0, resW=0;
-divider.addEventListener('mousedown', e => { resizing=true; resX=e.clientX; resW=graphPane.offsetWidth; divider.classList.add('active'); document.body.style.cursor='col-resize'; document.body.style.userSelect='none'; });
-document.addEventListener('mousemove', e => { if(!resizing)return; graphPane.style.width=Math.max(180,Math.min(window.innerWidth*.8,resW+(resX-e.clientX)))+'px'; resizeCanvas(); });
-document.addEventListener('mouseup', () => { if(!resizing)return; resizing=false; divider.classList.remove('active'); document.body.style.cursor=''; document.body.style.userSelect=''; });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const ts = getTouches(e);
 
+  if (ts.length === 1 && pinchDist0 === null) {
+    // pan
+    const dx = ts[0].x - lastMX, dy = ts[0].y - lastMY;
+    panX += dx; panY += dy;
+    lastMX = ts[0].x; lastMY = ts[0].y;
+    drawGraph(lastPlots);
+
+    // show coords
+    const mx = ((ts[0].x - canvas.width/2 - panX) / scale).toFixed(2);
+    const my = ((canvas.height/2 + panY - ts[0].y) / scale).toFixed(2);
+    coordEl.textContent = `x: ${mx},  y: ${my}`;
+
+  } else if (ts.length === 2 && pinchDist0 !== null) {
+    // pinch-to-zoom around midpoint
+    const d = dist(ts[0], ts[1]);
+    const mid = { x: (ts[0].x + ts[1].x) / 2, y: (ts[0].y + ts[1].y) / 2 };
+    const ratio = d / pinchDist0;
+    const newScale = Math.min(400, Math.max(8, pinchScale0 * ratio));
+
+    // Adjust pan so the pinch midpoint stays fixed in math-space
+    const mathMidX = (touchMid0.x - canvas.width/2  - touchPanX0) / pinchScale0;
+    const mathMidY = (canvas.height/2 + touchPanY0 - touchMid0.y) / pinchScale0;
+    panX = mid.x - canvas.width/2  - mathMidX * newScale;
+    panY = canvas.height/2 - mid.y  - mathMidY * newScale;
+    scale = newScale;
+    drawGraph(lastPlots);
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  if (e.touches.length < 2) { pinchDist0 = null; }
+  if (e.touches.length === 0) { coordEl.textContent = 'x: —, y: —'; }
+}, { passive: false });
+
+// ════════════════════════════════
+//   DIVIDER RESIZE (desktop)
+// ════════════════════════════════
+const divider   = document.getElementById('divider');
+const graphPane = document.getElementById('graphPane');
+const isMobile  = () => window.innerWidth <= 640;
+
+let resizing=false, resX=0, resY=0, resW=0, resH=0;
+
+divider.addEventListener('mousedown', e => {
+  resizing=true; resX=e.clientX; resY=e.clientY;
+  resW=graphPane.offsetWidth; resH=document.getElementById('editorPane').offsetHeight;
+  divider.classList.add('active');
+  document.body.style.cursor=isMobile()?'row-resize':'col-resize';
+  document.body.style.userSelect='none';
+});
+document.addEventListener('mousemove', e => {
+  if(!resizing) return;
+  if(isMobile()){
+    const edPane=document.getElementById('editorPane');
+    const newH=Math.max(120,Math.min(window.innerHeight*.8,resH+(e.clientY-resY)));
+    edPane.style.height=newH+'px';
+  } else {
+    graphPane.style.width=Math.max(180,Math.min(window.innerWidth*.8,resW+(resX-e.clientX)))+'px';
+  }
+  resizeCanvas();
+});
+document.addEventListener('mouseup',()=>{
+  if(!resizing) return;
+  resizing=false; divider.classList.remove('active');
+  document.body.style.cursor=''; document.body.style.userSelect='';
+});
+
+// Divider touch (mobile drag handle)
+divider.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  resizing=true; resX=t.clientX; resY=t.clientY;
+  resW=graphPane.offsetWidth;
+  resH=document.getElementById('editorPane').offsetHeight;
+}, { passive:true });
+divider.addEventListener('touchmove', e => {
+  if(!resizing) return;
+  e.preventDefault();
+  const t=e.touches[0];
+  if(isMobile()){
+    const edPane=document.getElementById('editorPane');
+    const newH=Math.max(120,Math.min(window.innerHeight*.8,resH+(t.clientY-resY)));
+    edPane.style.height=newH+'px';
+  } else {
+    graphPane.style.width=Math.max(180,Math.min(window.innerWidth*.8,resW+(resX-t.clientX)))+'px';
+  }
+  resizeCanvas();
+}, { passive:false });
+divider.addEventListener('touchend', ()=>{ resizing=false; });
+
+// ════════════════════════════════
+//   INIT
+// ════════════════════════════════
 updateLines();
+buildChips();
 window.addEventListener('resize', resizeCanvas);
-setTimeout(() => { resizeCanvas(); runCode(); }, 60);
+setTimeout(()=>{ resizeCanvas(); runCode(); }, 200);
 </script>
 </body>
 </html>
